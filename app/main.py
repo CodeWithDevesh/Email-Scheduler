@@ -4,10 +4,13 @@ from app.database import get_db_async
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from loguru import logger
+from app.routes import scheduler
 
 
 logger.debug("Starting FastAPI application")
 app = FastAPI()
+
+app.include_router(scheduler.router)
 
 @app.get("/")
 async def root():
