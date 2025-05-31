@@ -40,5 +40,5 @@ async def get_db_async():
     finally:
         logger.debug("Async database session closed")
 
-base = declarative_base()
+Base = declarative_base()
 logger.debug("Declarative base initialized")

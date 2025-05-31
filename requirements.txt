@@ -5,3 +5,4 @@ loguru
 sqlalchemy[asyncio]
 psycopg2
 asyncpg
+alembic
