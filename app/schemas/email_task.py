@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator, EmailStr
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -15,14 +15,23 @@ class EmailTaskCreate(BaseModel):
     def parse_scheduled_time(cls, v):
         if isinstance(v, str):
             try:
-                return datetime.strptime(v, "%H:%M %d/%m/%Y")
+                d = datetime.fromisoformat(v)
             except ValueError:
-                raise ValueError("Time must be in 'HH:MM DD/MM/YYYY' format")
-        elif not isinstance(v, datetime):
-            raise ValueError(
-                "Scheduled time must be a datetime object or a valid string"
-            )
-        return v
+                raise ValueError("Invalid datetime format. Use ISO 8601.")
+
+            if d.tzinfo is None:
+                raise ValueError(
+                    "Scheduled time must include a timezone (e.g., +05:30)"
+                )
+
+            d_utc = d.astimezone(timezone.utc)
+
+            if d_utc <= datetime.now(timezone.utc):
+                raise ValueError("Scheduled time must be in the future")
+
+            return d_utc
+
+        raise ValueError("Scheduled time must be a valid ISO 8601 datetime string")
 
 
 class EmailTaskResponse(BaseModel):
@@ -33,9 +42,9 @@ class EmailTaskResponse(BaseModel):
     body: str
     status: str
     send_at: datetime  # HH:MM DD-MM-YYYY format
-    sent_at: str|None = None
+    sent_at: str | None = None
     retry_count: int = 0
-    error_message: str|None = None
+    error_message: str | None = None
 
     class Config:
         from_attributes = True
