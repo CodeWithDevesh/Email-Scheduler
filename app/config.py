@@ -1,16 +1,21 @@
-import dotenv
+from dotenv import load_dotenv
 import os
 from loguru import logger
 import sys
 
-dotenv.load_dotenv()
+load_dotenv()
 
-logger.remove()
-LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
+LOG_LEVEL = os.getenv("LOG_LEVELL", "WARNING").upper()
+logger.info(f"Setting log level to {LOG_LEVEL}")
 if LOG_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+    logger.error(
+        f"Invalid LOG_LEVEL: {LOG_LEVEL}. Must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL."
+    )
     raise ValueError(
         f"Invalid LOG_LEVEL: {LOG_LEVEL}. Must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL."
     )
+
+logger.remove()
 logger.add(
     sys.stdout,
     level=LOG_LEVEL,
@@ -24,19 +29,16 @@ logger.add(
     context=None,
     catch=True,
 )
+logger.debug("Logger configured successfully")
 
 
 logger.debug("Loading configuration from environment variables")
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/EmailScheduler"
-)
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-REDIS_CACHE_TTL = int(os.getenv("REDIS_CACHE_TTL", 60 * 60 * 24))  # Default to 24 hours
-REDIS_CACHE_KEY_PREFIX = os.getenv("REDIS_CACHE_KEY_PREFIX", "app_cache")
-REDIS_CACHE_ENABLED = os.getenv("REDIS_CACHE_ENABLED", "true").lower() in (
-    "true",
-    "1",
-    "t",
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    logger.info(f"Database URL loaded successfully")
+else:
+    logger.warning("Database URL is not set. Using default value.")
+    DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/EmailScheduler"
+
 logger.debug("Configuration loaded successfully")

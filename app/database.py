@@ -1,37 +1,44 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from app.config import DATABASE_URL
 from loguru import logger
 
-logger.trace("Creating the Sync Engine")
+logger.debug("Creating the Sync Engine")
 engine = create_engine(DATABASE_URL, echo=True)
 
-logger.trace("Creating the Async Engine")
+logger.debug("Creating the Async Engine")
 async_engine = create_async_engine(DATABASE_URL.replace("postgresql", "postgresql+asyncpg"), echo=True)
 
-logger.trace("Creating the sync session")
+logger.debug("Creating the sync session")
 session = sessionmaker(bind=engine, expire_on_commit=False, class_=Session)
 
-logger.trace("Creating the async session")
-async_session = sessionmaker(bind=async_engine, expire_on_commit=False, class_=AsyncSession)
+logger.debug("Creating the async session")
+async_session = async_sessionmaker(bind=async_engine, expire_on_commit=False, class_=AsyncSession)
+
+logger.info("Database setup completed successfully")
 
 def get_db_sync():
+    logger.debug("Opening a new sync database session")
     try:
-        db = session()
-        yield db
+        with session() as db:
+            yield db
     except Exception as e:
-        logger.error(f"Sync Database session error: {e}")
+        logger.error(f"Error occurred in sync database session: {e}")
         raise
     finally:
-        db.close()
+        logger.debug("Sync database session closed")
 
 async def get_db_async():
+    logger.debug("Opening a new async database session")
     try:
-        db = async_session()
-        yield db
+        async with async_session() as db:
+            yield db
     except Exception as e:
-        logger.error(f"Async Database session error: {e}")
+        logger.error(f"Error occurred in async database session: {e}")
         raise
     finally:
-        await db.close()
+        logger.debug("Async database session closed")
+
+base = declarative_base()
+logger.debug("Declarative base initialized")
